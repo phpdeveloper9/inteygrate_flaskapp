@@ -1,17 +1,30 @@
-import imp
+#!/usr/bin/python
 import os
 
+virtenv = os.environ['OPENSHIFT_PYTHON_DIR'] + '/virtenv/'
+#virtenv = os.path.join(os.environ.get('OPENSHIFT_PYTHON_DIR','.'), 'virtenv')
+virtualenv = os.path.join(virtenv, 'bin/activate_this.py')
 try:
-   zvirtenv = os.path.join(os.environ['OPENSHIFT_PYTHON_DIR'],
-                       'virtenv', 'bin', 'activate_this.py')
-                        execfile(zvirtenv, dict(__file__ = zvirtenv) )
+    execfile(virtualenv, dict(__file__=virtualenv))
 except IOError:
-   pass
+    pass
+#
+# IMPORTANT: Put any additional includes below this line.  If placed above this
+# line, it's possible required libraries won't be in your searchable path
+#
 
+from flaskapp import app as application
+
+#
+# Below for testing only
+#
 if __name__ == '__main__':
-   ip   = os.environ['OPENSHIFT_PYTHON_IP']
-   port = int(os.environ['OPENSHIFT_PYTHON_PORT'])
-   app = imp.load_source('application', 'main.py')
-
-   app.application.listen(port , ip)
-   app.ioloop.IOLoop.instance().start()
+    from wsgiref.simple_server import make_server
+    ip = os.environ['OPENSHIFT_PYTHON_IP']
+    port = int(os.environ['OPENSHIFT_PYTHON_PORT'])
+    #host_name = os.environ['OPENSHIFT_GEAR_DNS']
+    httpd = make_server(ip, 8000, application)
+    #httpd = make_server('localhost', 8051, application)
+    # Wait for a single request, serve it and quit.
+    httpd.handle_request()
+    #httpd.serve_forever()
